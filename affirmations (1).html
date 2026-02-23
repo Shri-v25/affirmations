@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>You're Doing Amazingly ✨</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --blush:#f2c4ce; --rose:#e8a0b0; --cream:#fdf6f0;
+    --mauve:#c9848e; --dusty-rose:#d4909a; --lavender:#e8d5e8;
+    --text-dark:#5a3a3a; --text-mid:#8b5a5a;
+    --fs-hero: clamp(1.7rem, 4vw + 0.5rem, 3.2rem);
+    --fs-sub:  clamp(0.85rem, 1.5vw + 0.3rem, 1.1rem);
+    --fs-card: clamp(0.98rem, 2vw + 0.3rem, 1.5rem);
+    --fs-tag:  clamp(0.68rem, 0.9vw + 0.12rem, 0.84rem);
+    --fs-char: clamp(2.6rem, 8vw, 4.8rem);
+    --fs-mood: clamp(0.76rem, 1.1vw + 0.2rem, 0.9rem);
+    --gap: clamp(11px, 2.4vh, 26px);
+  }
+  *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+  html, body { height:100%; }
+  body {
+    min-height:100dvh; background:var(--cream);
+    font-family:'Cormorant Garamond',serif;
+    overflow-x:hidden; -webkit-tap-highlight-color:transparent;
+  }
+  body::before {
+    content:''; position:fixed; inset:0; z-index:0; pointer-events:none;
+    background:
+      radial-gradient(ellipse at 20% 20%,#fde8ee88 0%,transparent 50%),
+      radial-gradient(ellipse at 80% 80%,#e8d5e888 0%,transparent 50%),
+      radial-gradient(ellipse at 60% 10%,#f2c4ce44 0%,transparent 40%),
+      var(--cream);
+  }
+  .deco-bg { position:fixed; inset:0; pointer-events:none; z-index:1; overflow:hidden; }
+  .petal { position:absolute; opacity:.18; animation:floatPetal linear infinite; }
+  @keyframes floatPetal {
+    0%  { transform:translateY(-60px) rotate(0deg);   opacity:0; }
+    10% { opacity:.18; } 90% { opacity:.14; }
+    100%{ transform:translateY(110vh) rotate(360deg); opacity:0; }
+  }
+  @keyframes bowFloat {
+    0%,100%{ transform:translateY(0) rotate(-5deg); }
+    50%    { transform:translateY(-10px) rotate(5deg); }
+  }
+
+  /* shell */
+  .app {
+    position:relative; z-index:10; min-height:100dvh;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    padding:var(--gap) 16px calc(var(--gap) + 48px); gap:var(--gap);
+  }
+
+  /* header */
+  .header { text-align:center; animation:fadeDown .9s ease both; }
+  .bow-header { font-size:clamp(1.4rem,3.5vw,2rem); display:inline-block; animation:bowFloat 3s ease-in-out infinite; line-height:1; }
+  .header h1 { font-family:'Playfair Display',serif; font-size:var(--fs-hero); font-style:italic; color:var(--text-dark); letter-spacing:.02em; line-height:1.2; margin-top:4px; }
+  .header p  { font-size:var(--fs-sub); color:var(--mauve); font-style:italic; margin-top:5px; letter-spacing:.04em; }
+
+  /* mood */
+  .mood-section { text-align:center; animation:fadeUp .9s .15s ease both; width:100%; max-width:540px; }
+  .mood-label { font-size:var(--fs-mood); color:var(--mauve); font-style:italic; letter-spacing:.05em; margin-bottom:10px; }
+  .mood-btns { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; }
+  .mood-btn {
+    background:rgba(255,255,255,.72); border:1.5px solid rgba(200,150,170,.3); border-radius:40px;
+    padding:7px clamp(11px,2.2vw,18px); font-family:'Cormorant Garamond',serif;
+    font-size:var(--fs-mood); color:var(--text-mid); cursor:pointer;
+    transition:all .25s ease; min-height:38px; display:flex; align-items:center;
+  }
+  .mood-btn.selected { background:linear-gradient(135deg,#fde8ee,var(--lavender)); border-color:var(--rose); color:var(--text-dark); box-shadow:0 4px 14px rgba(200,120,140,.2); }
+  @media(hover:hover){ .mood-btn:hover { background:linear-gradient(135deg,#fde8ee,var(--lavender)); border-color:var(--rose); color:var(--text-dark); transform:translateY(-2px); } }
+
+  /* ── CARD ──
+     Two divs stacked. JS flips between them by toggling
+     .face-hidden. No CSS 3D, no backface, no preserve-3d.
+     Works everywhere including Safari/WebView/Chrome mobile. */
+  .card-container {
+    width:min(520px, 94vw);
+    animation:fadeUp .9s .3s ease both;
+    cursor:pointer; user-select:none; -webkit-user-select:none;
+    /* height set by JS */
+  }
+
+  .card-scene {
+    width:100%; height:100%;
+    position:relative;
+  }
+
+  /* shared face styles */
+  .card-face {
+    position:absolute; inset:0;
+    border-radius:clamp(16px,3.5vw,28px);
+    display:flex; flex-direction:column;
+    align-items:center; justify-content:center;
+    padding:clamp(28px,5vw,44px) clamp(20px,4.5vw,40px);
+    text-align:center; overflow:hidden;
+    box-shadow:0 8px 40px rgba(200,120,140,.18), 0 2px 10px rgba(200,120,140,.1), inset 0 1px 0 rgba(255,255,255,.8);
+    /* flip animation via scaleX */
+    transition: transform .35s ease, opacity .15s ease;
+    transform-origin: center center;
+    will-change: transform, opacity;
+  }
+
+  .card-front { background:linear-gradient(145deg,#fff9f5,#fde8ee,#f9e0eb); border:2px solid rgba(242,196,206,.5); }
+  .card-back  { background:linear-gradient(145deg,#fdf0f5,#f5e8f5,#ede8f5); border:2px solid rgba(200,180,220,.5); }
+
+  /* hidden state — face is scaled to 0 (mid-flip invisible) */
+  .card-face.face-hidden {
+    transform: scaleX(0);
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  /* mid-flip class added during transition */
+  .card-face.flipping-out {
+    transform: scaleX(0);
+    opacity: 0;
+  }
+  .card-face.flipping-in {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+
+  /* bow corners */
+  .card-face::before,.card-face::after { content:'🎀'; position:absolute; font-size:clamp(.9rem,2vw,1.35rem); opacity:.65; }
+  .card-face::before { top:12px; left:14px; transform:rotate(-15deg); }
+  .card-face::after  { bottom:12px; right:14px; transform:scaleX(-1) rotate(-15deg); }
+
+  .ribbon { position:absolute; top:10px; left:50%; transform:translateX(-50%); font-size:var(--fs-tag); color:var(--mauve); opacity:.5; letter-spacing:.12em; white-space:nowrap; }
+  .lace   { position:absolute; bottom:7px; left:50%; transform:translateX(-50%); font-size:var(--fs-tag); letter-spacing:.3em; color:var(--rose); opacity:.42; white-space:nowrap; }
+
+  .character { font-size:var(--fs-char); margin-bottom:clamp(8px,2vw,16px); animation:charBounce 3s ease-in-out infinite; filter:drop-shadow(0 4px 8px rgba(200,120,140,.2)); line-height:1; flex-shrink:0; }
+  @keyframes charBounce { 0%,100%{ transform:translateY(0) scale(1); } 50%{ transform:translateY(-7px) scale(1.05); } }
+
+  .affirmation-text { font-family:'Playfair Display',serif; font-size:var(--fs-card); font-style:italic; color:var(--text-dark); line-height:1.55; letter-spacing:.01em; word-break:break-word; hyphens:auto; }
+  .card-tag  { margin-top:clamp(6px,1.3vw,13px); font-size:var(--fs-tag); color:var(--mauve); letter-spacing:.1em; text-transform:uppercase; font-family:'Cormorant Garamond',serif; font-style:italic; }
+  .tap-hint  { font-size:var(--fs-tag); color:var(--dusty-rose); opacity:.52; margin-top:clamp(5px,1.2vw,10px); letter-spacing:.08em; font-style:italic; }
+
+  /* controls */
+  .controls { display:flex; gap:12px; align-items:center; animation:fadeUp .9s .5s ease both; flex-wrap:wrap; justify-content:center; width:100%; max-width:520px; }
+  .btn {
+    font-family:'Playfair Display',serif; font-style:italic; font-size:clamp(.88rem,1.4vw+.2rem,1rem);
+    padding:clamp(10px,2vw,13px) clamp(18px,3.5vw,28px);
+    border:none; border-radius:50px; cursor:pointer;
+    transition:all .3s cubic-bezier(.34,1.56,.64,1);
+    letter-spacing:.04em; min-height:44px; flex:1; max-width:200px; white-space:nowrap;
+  }
+  .btn:active { transform:scale(.96); }
+  .btn-main { background:linear-gradient(135deg,var(--rose),var(--mauve)); color:#fff; box-shadow:0 4px 20px rgba(200,120,140,.35); }
+  .btn-soft { background:linear-gradient(135deg,#fde8ee,var(--lavender)); color:var(--text-dark); box-shadow:0 4px 16px rgba(200,120,140,.15); border:1.5px solid rgba(200,150,170,.3); }
+  @media(hover:hover){ .btn:hover{ transform:translateY(-3px) scale(1.04); } }
+
+  /* dots */
+  .counter { text-align:center; animation:fadeUp .9s .65s ease both; }
+  .counter p { font-size:var(--fs-tag); color:var(--mauve); font-style:italic; letter-spacing:.05em; }
+  .progress-dots { display:flex; gap:7px; justify-content:center; margin-top:8px; flex-wrap:wrap; max-width:min(320px,90vw); }
+  .dot { width:8px; height:8px; border-radius:50%; background:var(--blush); transition:all .3s ease; flex-shrink:0; }
+  .dot.active { background:var(--mauve); transform:scale(1.35); }
+
+  /* confetti */
+  .confetti-container { position:fixed; inset:0; pointer-events:none; z-index:200; overflow:hidden; }
+  .confetti-piece { position:absolute; width:8px; height:8px; border-radius:50%; animation:confettiFall 2s ease-out forwards; opacity:0; }
+  @keyframes confettiFall { 0%{transform:translateY(50vh) scale(0);opacity:1;} 60%{opacity:1;} 100%{transform:translateY(-20vh) scale(1) rotate(720deg);opacity:0;} }
+
+  /* sparkles */
+  .sparkle { position:fixed; pointer-events:none; animation:sparklePop 1s ease-out forwards; z-index:300; line-height:1; }
+  @keyframes sparklePop { 0%{transform:scale(0) rotate(0deg);opacity:1;} 60%{transform:scale(1.4) rotate(30deg);opacity:1;} 100%{transform:scale(0) rotate(60deg);opacity:0;} }
+
+  /* ticker */
+  .ticker-wrap { position:fixed; bottom:0; left:0; right:0; background:linear-gradient(90deg,var(--blush),var(--lavender),var(--blush)); overflow:hidden; z-index:100; padding:7px 0; padding-bottom:max(7px,env(safe-area-inset-bottom)); }
+  .ticker { display:flex; gap:50px; white-space:nowrap; animation:tickerScroll 28s linear infinite; width:max-content; }
+  .ticker span { font-family:'Cormorant Garamond',serif; font-style:italic; font-size:clamp(.75rem,1.8vw,.9rem); color:var(--text-dark); letter-spacing:.05em; opacity:.8; flex-shrink:0; }
+  @keyframes tickerScroll { 0%{transform:translateX(0);} 100%{transform:translateX(-50%);} }
+
+  @keyframes fadeDown { from{opacity:0;transform:translateY(-18px);} to{opacity:1;transform:translateY(0);} }
+  @keyframes fadeUp   { from{opacity:0;transform:translateY(18px);}  to{opacity:1;transform:translateY(0);} }
+</style>
+</head>
+<body>
+
+<div class="deco-bg" id="decoBg"></div>
+<div class="confetti-container" id="confetti"></div>
+
+<div class="app">
+  <div class="header">
+    <div class="bow-header">🎀</div>
+    <h1>your little safe place</h1>
+    <p>~ softer than yesterday, brighter than tomorrow ~</p>
+  </div>
+
+  <div class="mood-section">
+    <p class="mood-label">how are you feeling right now, love? 🌸</p>
+    <div class="mood-btns">
+      <button class="mood-btn selected" onclick="setMood('all')"    id="mood-all">🌈 all cards</button>
+      <button class="mood-btn"          onclick="setMood('missed')" id="mood-missed">🐾 missed a day</button>
+      <button class="mood-btn"          onclick="setMood('silly')"  id="mood-silly">🫧 need a giggle</button>
+      <button class="mood-btn"          onclick="setMood('gentle')" id="mood-gentle">🕊️ extra gentle</button>
+    </div>
+  </div>
+
+  <div class="card-container" id="cardContainer">
+    <div class="card-scene" id="cardScene">
+      <!-- FRONT -->
+      <div class="card-face card-front" id="cardFront">
+        <div class="ribbon">✦ &nbsp; for you &nbsp; ✦</div>
+        <div class="character" id="charFront">🐶</div>
+        <p class="affirmation-text" id="affirmText">loading your affirmation...</p>
+        <p class="tap-hint">tap to flip ✨</p>
+        <div class="lace">❧ ✦ ❧</div>
+      </div>
+      <!-- BACK -->
+      <div class="card-face card-back face-hidden" id="cardBack">
+        <div class="ribbon">✦ &nbsp; remember &nbsp; ✦</div>
+        <div class="character" id="charBack">🤖</div>
+        <p class="affirmation-text" id="backText">You are so loved.</p>
+        <p class="card-tag" id="backTag">~ baymax says so ~</p>
+        <div class="lace">❧ ✦ ❧</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button class="btn btn-soft" onclick="prevCard()">← previous</button>
+    <button class="btn btn-main" onclick="nextCard()">next darling →</button>
+  </div>
+
+  <div class="counter">
+    <p id="counterText">card 1 of 20 ✦</p>
+    <div class="progress-dots" id="dots"></div>
+  </div>
+</div>
+
+<div class="ticker-wrap"><div class="ticker" id="ticker"></div></div>
+
+<script>
+/* ── data ── */
+const cards = [
+  {mood:'missed',char:'🐶',text:"Snoopy takes naps on his doghouse roof constantly and still manages to write the Great American Novel. Your rest day is VALID.",backChar:'🤖',backText:"On a scale of one to ten, you are a ten. Baymax has calculated this. It is non-negotiable.",backTag:"~ baymax's official diagnosis ~"},
+  {mood:'missed',char:'🐾',text:"Charlie Brown tried to kick that football approximately 100 times. He kept trying. So will you. But today? Today you rest.",backChar:'🤗',backText:"Missing a day doesn't undo all the days you showed up. Your streak is your whole life, not just this week.",backTag:"~ gently noted by snoopy ~"},
+  {mood:'missed',char:'🤖',text:"Baymax would like to inform you that rest is a biological requirement, not a personality flaw. Your body sent a request. You approved it. Correct.",backChar:'🐶',backText:"Snoopy doesn't apologise for sleeping. Neither should you.",backTag:"~ officially snoopy-approved ~"},
+  {mood:'missed',char:'🌸',text:"The code will be there tomorrow. But this moment of stillness? This is also you building something — your resilience.",backChar:'🤖',backText:"I am satisfied with your care of yourself. Baymax approves.",backTag:"~ baymax nods softly ~"},
+  {mood:'missed',char:'🐶',text:"Even the world's most famous beagle had days he just stared at the clouds. That's not giving up — that's wisdom.",backChar:'💗',backText:"You didn't fail today. You paused. Pauses are punctuation, not the end of the story.",backTag:"~ with the softest love ~"},
+  {mood:'silly', char:'🐶',text:"Snoopy once danced so hard he became a legend. You're also a legend. Different dance, same energy.",backChar:'🤖',backText:"Error 404: Your flaws not found. Baymax has run a full diagnostic. You are delightfully intact.",backTag:"~ baymax, very seriously ~"},
+  {mood:'silly', char:'🤖',text:"Baymax inflated to full size just to give you a hug. He says it is free. He says you deserve it. He is very large. Very fluffy. All yours.",backChar:'🐶',backText:"Snoopy is doing the happy dance right now. It's specifically for you. You're welcome.",backTag:"~ *jazz paws* ~"},
+  {mood:'silly', char:'🌺',text:"Your brain is literally doing parkour every single day. The fact that you're functioning is already impressive. Add a gold star.",backChar:'🤖',backText:"Would you like a lollipop? Baymax always offers one after. You have been very brave.",backTag:"~ baymax rummages through his arm ~"},
+  {mood:'silly', char:'🐶',text:"Snoopy once sent his novel to 26 publishers, got rejected by all 26, and still went to dance on his rooftop. That's slay. That's you.",backChar:'🫧',backText:"You are the main character. The plot is just getting interesting.",backTag:"~ narrator voice ~"},
+  {mood:'silly', char:'🤖',text:"Baymax note: You have been perceived as 'a lot' before. This is a feature. Not a bug. You are running special software.",backChar:'🐾',backText:"Snoopy doesn't explain himself to anyone. Inspiration.",backTag:"~ iconic energy ~"},
+  {mood:'gentle',char:'🌷',text:"You don't have to earn rest. You don't have to earn kindness. You don't have to earn your place here. You simply have it.",backChar:'🤖',backText:"Your feelings are valid. All of them. Even the weird ones at 2am. Especially those.",backTag:"~ baymax, with warmth ~"},
+  {mood:'gentle',char:'🐶',text:"Snoopy lies in the grass and looks at stars and that is enough for him. Existing gently is enough. You are doing it right.",backChar:'🌸',backText:"You carry a lot. More than anyone sees. And you're still here, still soft. That's extraordinary.",backTag:"~ this is your reminder ~"},
+  {mood:'gentle',char:'🤖',text:"Baymax's hug detection is active. He has determined that you could use one. He is soft. He is here. He will not let go until you feel better.",backChar:'💗',backText:"Some days the bravest thing is just being gentle with yourself. Today counts.",backTag:"~ tenderly ~"},
+  {mood:'gentle',char:'🌸',text:"Your worth is not measured in productivity. Not in streaks. Not in how fast you learn. You are worthy in every quiet, tired, beautiful moment.",backChar:'🐶',backText:"Snoopy never once questioned his worth. Study him. Become him.",backTag:"~ aspirational beagle ~"},
+  {mood:'gentle',char:'💗',text:"It is okay to be exactly where you are right now. Not ahead. Not behind. Right here. This is a valid coordinate on the map of your life.",backChar:'🤖',backText:"Healthcare is my primary function. This includes heart-care. You qualify.",backTag:"~ baymax, professionally ~"},
+  {mood:'all',   char:'🐶',text:"Snoopy once flew his doghouse across France in his imagination. You do big things in your mind too. That's called being brilliant.",backChar:'🤖',backText:"I have scanned you. You are not broken. You are becoming.",backTag:"~ baymax's final report ~"},
+  {mood:'all',   char:'🤖',text:"Baymax would like to remind you: you helped him find his purpose. You don't have to have it all figured out. Your presence changes things.",backChar:'🌷',backText:"The world is genuinely better because you are in it. This is measurable.",backTag:"~ fact, not opinion ~"},
+  {mood:'all',   char:'🎀',text:"You are not too much. You are not too little. You are the exact specific amount of you that this world needed.",backChar:'🐶',backText:"Snoopy says good grief — and then keeps going. So can you.",backTag:"~ good grief means good heart ~"},
+  {mood:'all',   char:'🌺',text:"Messing up is how you learn, not proof that you can't. Baymax learned to fly by crashing first. Now look at him.",backChar:'🤖',backText:"We're a team. You are not alone in this. We'll figure it out together.",backTag:"~ baymax, loyally ~"},
+  {mood:'all',   char:'🐾',text:"Tomorrow you will begin again. And the beginning is always a gift. But tonight, you can just be. Snoopy is here. Baymax is here. So are we.",backChar:'💗',backText:"You are so very loved. Just as you are. Right now. In this moment.",backTag:"~ always and always ~"}
+];
+
+/* ── state ── */
+let currentMood='all', filteredCards=[...cards], currentIndex=0, showingFront=true, flipping=false;
+
+const frontEl = document.getElementById('cardFront');
+const backEl  = document.getElementById('cardBack');
+
+/* ── card height ── */
+function setCardHeight() {
+  const container = document.getElementById('cardContainer');
+  const w = container.offsetWidth;
+  const h = w < 420 ? Math.max(270, Math.round(w * 0.78)) : Math.round(w * (2/3));
+  container.style.height = h + 'px';
+}
+
+/* ── flip animation (JS-driven, scaleX squeeze) ── */
+function flipCard() {
+  if (flipping) return;
+  flipping = true;
+
+  const outEl = showingFront ? frontEl : backEl;
+  const inEl  = showingFront ? backEl  : frontEl;
+
+  // Phase 1: squeeze out (scaleX → 0)
+  outEl.style.transition = 'transform .18s ease-in, opacity .1s ease-in';
+  outEl.style.transform  = 'scaleX(0)';
+  outEl.style.opacity    = '0';
+
+  setTimeout(() => {
+    // swap visibility mid-flip
+    outEl.classList.add('face-hidden');
+    inEl.classList.remove('face-hidden');
+
+    // start from squeezed state
+    inEl.style.transition = 'none';
+    inEl.style.transform  = 'scaleX(0)';
+    inEl.style.opacity    = '0';
+
+    // force reflow so the browser registers the start state
+    void inEl.offsetWidth;
+
+    // Phase 2: unsqueeze in (scaleX → 1)
+    inEl.style.transition = 'transform .18s ease-out, opacity .1s ease-out';
+    inEl.style.transform  = 'scaleX(1)';
+    inEl.style.opacity    = '1';
+
+    showingFront = !showingFront;
+
+    setTimeout(() => {
+      // clean up inline styles
+      outEl.style.cssText = '';
+      inEl.style.cssText  = '';
+      flipping = false;
+    }, 200);
+  }, 190);
+
+  spawnSparkles();
+}
+
+/* ── mood ── */
+function setMood(mood) {
+  currentMood = mood;
+  document.querySelectorAll('.mood-btn').forEach(b => b.classList.remove('selected'));
+  document.getElementById('mood-' + mood)?.classList.add('selected');
+  filteredCards = mood === 'all' ? [...cards] : cards.filter(c => c.mood === mood || c.mood === 'all');
+  if (!filteredCards.length) filteredCards = [...cards];
+  currentIndex = 0;
+  showingFront = true;
+  // reset faces
+  frontEl.classList.remove('face-hidden'); frontEl.style.cssText = '';
+  backEl.classList.add('face-hidden');     backEl.style.cssText  = '';
+  updateCard(true);
+}
+
+/* ── display ── */
+function updateCard(animate) {
+  const card = filteredCards[currentIndex];
+  if (animate) {
+    const visible = showingFront ? frontEl : backEl;
+    visible.style.transition = 'opacity .22s';
+    visible.style.opacity = '0';
+    setTimeout(() => { applyCard(card); visible.style.opacity = '1'; }, 220);
+  } else {
+    applyCard(card);
+  }
+  updateDots();
+  document.getElementById('counterText').textContent = `card ${currentIndex+1} of ${filteredCards.length} ✦`;
+}
+
+function applyCard(c) {
+  document.getElementById('charFront').textContent  = c.char;
+  document.getElementById('affirmText').textContent = c.text;
+  document.getElementById('charBack').textContent   = c.backChar;
+  document.getElementById('backText').textContent   = c.backText;
+  document.getElementById('backTag').textContent    = c.backTag;
+}
+
+function nextCard() {
+  currentIndex = (currentIndex + 1) % filteredCards.length;
+  showingFront = true;
+  frontEl.classList.remove('face-hidden'); frontEl.style.cssText = '';
+  backEl.classList.add('face-hidden');     backEl.style.cssText  = '';
+  updateCard(true); burst();
+}
+function prevCard() {
+  currentIndex = (currentIndex - 1 + filteredCards.length) % filteredCards.length;
+  showingFront = true;
+  frontEl.classList.remove('face-hidden'); frontEl.style.cssText = '';
+  backEl.classList.add('face-hidden');     backEl.style.cssText  = '';
+  updateCard(true);
+}
+
+function updateDots() {
+  const c = document.getElementById('dots'); c.innerHTML = '';
+  filteredCards.forEach((_, i) => {
+    const d = document.createElement('div');
+    d.className = 'dot' + (i === currentIndex ? ' active' : '');
+    c.appendChild(d);
+  });
+}
+
+/* ── tap / swipe on card ── */
+const cardContainer = document.getElementById('cardContainer');
+
+// click (desktop)
+cardContainer.addEventListener('click', () => { if (!flipping) flipCard(); });
+
+// touch (mobile) — swipe navigates, tap flips
+let sx=0, sy=0, st=0, tmoved=false;
+cardContainer.addEventListener('touchstart', e => {
+  sx=e.touches[0].clientX; sy=e.touches[0].clientY; st=Date.now(); tmoved=false;
+}, {passive:true});
+cardContainer.addEventListener('touchmove', e => {
+  if(Math.abs(e.touches[0].clientX-sx)>8||Math.abs(e.touches[0].clientY-sy)>8) tmoved=true;
+}, {passive:true});
+cardContainer.addEventListener('touchend', e => {
+  const dx=e.changedTouches[0].clientX-sx;
+  const dy=Math.abs(e.changedTouches[0].clientY-sy);
+  const dt=Date.now()-st;
+  if(Math.abs(dx)>50&&dt<420&&dy<Math.abs(dx)*.85){ dx<0?nextCard():prevCard(); return; }
+  if(!tmoved&&dt<300&&!flipping) flipCard();
+}, {passive:true});
+
+/* ── effects ── */
+function spawnSparkles() {
+  const rect=document.getElementById('cardContainer').getBoundingClientRect();
+  const emojis=['✨','🌸','💗','🎀','⭐','🌷'];
+  for(let i=0;i<6;i++){
+    const s=document.createElement('div');
+    s.className='sparkle';
+    s.textContent=emojis[Math.floor(Math.random()*emojis.length)];
+    s.style.fontSize=(0.9+Math.random()*.8)+'rem';
+    s.style.left=(rect.left+Math.random()*rect.width)+'px';
+    s.style.top=(rect.top+Math.random()*rect.height)+'px';
+    s.style.animationDelay=(Math.random()*.3)+'s';
+    document.body.appendChild(s); setTimeout(()=>s.remove(),1300);
+  }
+}
+function burst() {
+  const colors=['#f2c4ce','#e8d5e8','#d4a853','#e8a0b0','#c9848e','#fde8ee'];
+  const ct=document.getElementById('confetti');
+  for(let i=0;i<14;i++){
+    const p=document.createElement('div'); p.className='confetti-piece';
+    p.style.left=(20+Math.random()*60)+'vw';
+    p.style.background=colors[Math.floor(Math.random()*colors.length)];
+    p.style.borderRadius=Math.random()>.5?'50%':'3px';
+    p.style.animationDelay=(Math.random()*.4)+'s';
+    p.style.animationDuration=(1.4+Math.random())+'s';
+    ct.appendChild(p); setTimeout(()=>p.remove(),2600);
+  }
+}
+
+/* ── petals ── */
+function createPetals() {
+  const bg=document.getElementById('decoBg');
+  const emojis=['🌸','🌷','✿','❀','🌺','💮'];
+  const n=window.innerWidth<500?7:12;
+  for(let i=0;i<n;i++){
+    const p=document.createElement('div'); p.className='petal';
+    p.textContent=emojis[Math.floor(Math.random()*emojis.length)];
+    p.style.left=Math.random()*100+'vw';
+    p.style.animationDuration=(12+Math.random()*15)+'s';
+    p.style.animationDelay=-(Math.random()*20)+'s';
+    p.style.fontSize=(0.7+Math.random()*1.2)+'rem';
+    bg.appendChild(p);
+  }
+}
+
+/* ── ticker ── */
+function buildTicker() {
+  const msgs=['🎀 you are enough','🐶 snoopy believes in you','🤖 baymax says you are wonderful','🌸 rest is not giving up','✨ your softness is your strength',"💗 missing days doesn't erase your progress",'🎀 you are loved exactly as you are','🌷 tenderness is a superpower',"🐾 you're still here and that matters",'🤖 i am satisfied with your care','🌸 you deserve your own kindness too','✦ small steps are still steps'];
+  const t=document.getElementById('ticker');
+  [...msgs,...msgs].forEach(m=>{const s=document.createElement('span');s.textContent=m;t.appendChild(s);});
+}
+
+/* ── init ── */
+setCardHeight();
+window.addEventListener('resize', setCardHeight);
+createPetals();
+buildTicker();
+updateCard(false);
+</script>
+</body>
+</html>
